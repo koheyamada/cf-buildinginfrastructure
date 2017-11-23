@@ -1,0 +1,43 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: SecurityGroup
+
+#=================================
+Parameters:
+  Project:
+    Type: String
+    Default: KOH3I
+    Description: Project Name
+
+  MyOffice:
+    Type: String
+    Default: 183.77.250.128/32
+
+
+#=================================
+Outputs:
+  SecurityGroupID:
+    Description: The SecurityGroup ID of the SG
+    Value: !Ref CommonSecurityGroup
+    Export:
+      Name: !Join [ "-", [ !Ref Project, CommonSG ] ]
+
+
+#=================================
+Resources:
+  CommonSecurityGroup:
+    Type: "AWS::EC2::SecurityGroup"
+    Properties: 
+      GroupName: Common
+      GroupDescription: This SecurityGroup is for all Instances.
+      VpcId:
+        Fn::ImportValue:
+          !Join [ "-", [ !Ref Project, VPCID ] ]
+      SecurityGroupIngress:
+        -
+          IpProtocol: "tcp"
+          FromPort: "22"
+          ToPort: "22"
+          CidrIp: "183.77.250.128/32"
+      Tags:
+        - Key: Name
+          Value: CommonGroup

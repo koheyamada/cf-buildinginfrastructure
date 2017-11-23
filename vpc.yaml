@@ -1,0 +1,151 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: VPC
+
+#=================================
+Parameters:
+  Project:
+    Type: String
+    Default: KOH3I
+    Description: Network settings such as VPC and IGW, Subnets, Routetables.
+
+#=================================
+Outputs:
+  StackVPC:
+    Description: The ID of the VPC
+    Value: !Ref myVPC
+    Export:
+      Name: !Join [ "-", [ !Ref Project, VPCID ] ]
+ 
+
+#=================================
+Resources:
+
+ #=================================
+ # VPC Setting.
+ #=================================
+  myVPC:
+    Type: "AWS::EC2::VPC"
+    Properties:
+      CidrBlock: 10.0.0.0/16
+      EnableDnsSupport: 'true'
+      EnableDnsHostnames: 'true'
+      Tags:
+      - Key: Name
+        Value: !Ref Project
+
+ #=================================
+ # Make Subnet.
+ #=================================
+  mySubnet01:
+    Type: "AWS::EC2::Subnet"
+    Properties:
+      VpcId:
+        Ref: myVPC
+      CidrBlock: 10.0.0.0/24
+      AvailabilityZone: "ap-northeast-1a"
+      Tags:
+      - Key: Name
+        Value: Public01
+
+  mySubnet02:
+    Type: "AWS::EC2::Subnet"
+    Properties:
+      VpcId:
+        Ref: myVPC
+      CidrBlock: 10.0.1.0/24
+      AvailabilityZone: "ap-northeast-1c"
+      Tags:
+      - Key: Name
+        Value: Public02
+
+  mySubnet03:
+    Type: "AWS::EC2::Subnet"
+    Properties:
+      VpcId:
+        Ref: myVPC
+      CidrBlock: 10.0.2.0/24
+      AvailabilityZone: "ap-northeast-1a"
+      Tags:
+      - Key: Name
+        Value: Private01
+
+  mySubnet04:
+    Type: "AWS::EC2::Subnet"
+    Properties:
+      VpcId:
+        Ref: myVPC
+      CidrBlock: 10.0.3.0/24
+      AvailabilityZone: "ap-northeast-1c"
+      Tags:
+      - Key: Name
+        Value: Private02
+
+ #=================================
+ # Make IGW.
+ #=================================
+  myInternetGateway:
+    Type: "AWS::EC2::InternetGateway"
+    Properties:
+      Tags:
+      - Key: Name
+        Value: VPC
+
+  AttachGateway:
+    Type: "AWS::EC2::VPCGatewayAttachment"
+    Properties:
+      VpcId:
+        Ref: myVPC
+      InternetGatewayId:
+        Ref: myInternetGateway
+
+ #=================================
+ # Make Routing.
+ #=================================
+  myPublicRouteTable:
+    Type: "AWS::EC2::RouteTable"
+    Properties:
+      VpcId: !Ref myVPC 
+      Tags:
+      - Key: Name
+        Value: "Public"
+
+  myPublicRoute:
+    Type: "AWS::EC2::Route"
+    DependsOn: AttachGateway
+    Properties:
+      RouteTableId: !Ref myPublicRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref myInternetGateway
+
+  myPublicRouteTableAssociation01:
+    Type: "AWS::EC2::SubnetRouteTableAssociation"
+    Properties:
+      SubnetId: !Ref mySubnet01
+      RouteTableId: !Ref myPublicRouteTable
+
+  myPublicRouteTableAssociation02:
+    Type: "AWS::EC2::SubnetRouteTableAssociation"
+    Properties:
+      SubnetId: !Ref mySubnet02
+      RouteTableId: !Ref myPublicRouteTable
+
+  myPrivateRouteTable:
+    Type: "AWS::EC2::RouteTable"
+    Properties:
+      VpcId: !Ref myVPC 
+      Tags:
+      - Key: Name
+        Value: "Private"
+
+  myPrivateRouteTableAssociation01:
+    Type: "AWS::EC2::SubnetRouteTableAssociation"
+    Properties:
+      SubnetId: !Ref mySubnet03
+      RouteTableId: !Ref myPrivateRouteTable
+
+  myPrivateRouteTableAssociation02:
+    Type: "AWS::EC2::SubnetRouteTableAssociation"
+    Properties:
+      SubnetId: !Ref mySubnet04
+      RouteTableId: !Ref myPrivateRouteTable
+
