@@ -36,6 +36,7 @@ Resources:
  #=================================
  # Make Subnet.
  #=================================
+  # for Public-a
   mySubnet01:
     Type: "AWS::EC2::Subnet"
     Properties:
@@ -47,28 +48,31 @@ Resources:
       - Key: Name
         Value: Public01
 
+  # for Private-a
   mySubnet02:
     Type: "AWS::EC2::Subnet"
     Properties:
       VpcId:
         Ref: myVPC
       CidrBlock: 10.0.1.0/24
-      AvailabilityZone: "ap-northeast-1c"
+      AvailabilityZone: "ap-northeast-1a"
       Tags:
       - Key: Name
-        Value: Public02
+        Value: Private01
 
+  # for Public-c
   mySubnet03:
     Type: "AWS::EC2::Subnet"
     Properties:
       VpcId:
         Ref: myVPC
       CidrBlock: 10.0.2.0/24
-      AvailabilityZone: "ap-northeast-1a"
+      AvailabilityZone: "ap-northeast-1c"
       Tags:
       - Key: Name
-        Value: Private01
+        Value: Public02
 
+  # for Private-c
   mySubnet04:
     Type: "AWS::EC2::Subnet"
     Properties:
@@ -79,6 +83,30 @@ Resources:
       Tags:
       - Key: Name
         Value: Private02
+
+  # for Public-d
+  mySubnet05:
+    Type: "AWS::EC2::Subnet"
+    Properties:
+      VpcId:
+        Ref: myVPC
+      CidrBlock: 10.0.4.0/24
+      AvailabilityZone: "ap-northeast-1d"
+      Tags:
+      - Key: Name
+        Value: Public03
+
+  # for Private-d
+  mySubnet06:
+    Type: "AWS::EC2::Subnet"
+    Properties:
+      VpcId:
+        Ref: myVPC
+      CidrBlock: 10.0.5.0/24
+      AvailabilityZone: "ap-northeast-1d"
+      Tags:
+      - Key: Name
+        Value: Private03
 
  #=================================
  # Make IGW.
@@ -101,6 +129,7 @@ Resources:
  #=================================
  # Make Routing.
  #=================================
+  # for Public
   myPublicRouteTable:
     Type: "AWS::EC2::RouteTable"
     Properties:
@@ -126,9 +155,16 @@ Resources:
   myPublicRouteTableAssociation02:
     Type: "AWS::EC2::SubnetRouteTableAssociation"
     Properties:
-      SubnetId: !Ref mySubnet02
+      SubnetId: !Ref mySubnet03
       RouteTableId: !Ref myPublicRouteTable
 
+  myPublicRouteTableAssociation03:
+    Type: "AWS::EC2::SubnetRouteTableAssociation"
+    Properties:
+      SubnetId: !Ref mySubnet05
+      RouteTableId: !Ref myPublicRouteTable
+
+  # for Private
   myPrivateRouteTable:
     Type: "AWS::EC2::RouteTable"
     Properties:
@@ -140,12 +176,18 @@ Resources:
   myPrivateRouteTableAssociation01:
     Type: "AWS::EC2::SubnetRouteTableAssociation"
     Properties:
-      SubnetId: !Ref mySubnet03
+      SubnetId: !Ref mySubnet02
       RouteTableId: !Ref myPrivateRouteTable
 
   myPrivateRouteTableAssociation02:
     Type: "AWS::EC2::SubnetRouteTableAssociation"
     Properties:
       SubnetId: !Ref mySubnet04
+      RouteTableId: !Ref myPrivateRouteTable
+
+  myPrivateRouteTableAssociation03:
+    Type: "AWS::EC2::SubnetRouteTableAssociation"
+    Properties:
+      SubnetId: !Ref mySubnet06
       RouteTableId: !Ref myPrivateRouteTable
 
