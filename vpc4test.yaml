@@ -1,0 +1,185 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: VPC
+
+#=================================
+Parameters:
+  Project:
+    Type: String
+    Default: test
+    Description: Network settings such as VPC and IGW, Subnets, Routetables. For test environment.
+
+#=================================
+Outputs:
+  StackVPC:
+    Description: The ID of the VPC
+    Value: !Ref myVPC
+    Export:
+      Name: !Join [ "-", [ !Ref Project, VPCID ] ]
+ 
+
+#=================================
+Resources:
+
+ #=================================
+ # Create VPC.
+ #=================================
+  myVPC:
+    Type: "AWS::EC2::VPC"
+    Properties:
+      CidrBlock: 10.0.0.0/16
+      EnableDnsSupport: 'true'
+      EnableDnsHostnames: 'true'
+      Tags:
+      - Key: Name
+        Value: !Ref Project
+
+ #=================================
+ # Create Subnet.
+ #=================================
+  # for Public-01a
+  mySubnet01:
+    Type: "AWS::EC2::Subnet"
+    Properties:
+      VpcId:
+        Ref: myVPC
+      CidrBlock: 10.0.0.0/22
+      AvailabilityZone: "ap-northeast-1a"
+      Tags:
+      - Key: Name
+        Value: !Join [ "-", [ !Ref Project, Public01a ] ]
+
+  # for Private-01a
+  mySubnet02:
+    Type: "AWS::EC2::Subnet"
+    Properties:
+      VpcId:
+        Ref: myVPC
+      CidrBlock: 10.0.4.0/22
+      AvailabilityZone: "ap-northeast-1a"
+      Tags:
+      - Key: Name
+        Value: !Join [ "-", [ !Ref Project, Private01a ] ]
+
+  # for Private-c
+  mySubnet03:
+    Type: "AWS::EC2::Subnet"
+    Properties:
+      VpcId:
+        Ref: myVPC
+      CidrBlock: 10.0.8.0/22
+      AvailabilityZone: "ap-northeast-1c"
+      Tags:
+      - Key: Name
+        Value: !Join [ "-", [ !Ref Project, Private02c ] ]
+
+
+ #=================================
+ # Create IGW.
+ #=================================
+  myInternetGateway:
+    Type: "AWS::EC2::InternetGateway"
+    Properties:
+      Tags:
+      - Key: Name
+        Value: !Join [ "-", [ !Ref Project, VPCID ] ]
+
+  AttachGateway:
+    Type: "AWS::EC2::VPCGatewayAttachment"
+    Properties:
+      VpcId:
+        Ref: myVPC
+      InternetGatewayId:
+        Ref: myInternetGateway
+
+
+ #=================================
+ # Set Routing.
+ #=================================
+  # for Public
+  myPublicRouteTable:
+    Type: "AWS::EC2::RouteTable"
+    Properties:
+      VpcId: !Ref myVPC 
+      Tags:
+      - Key: Name
+        Value: !Join [ "-", [ !Ref Project, Public ] ]
+
+  myPublicRoute:
+    Type: "AWS::EC2::Route"
+    DependsOn: AttachGateway
+    Properties:
+      RouteTableId: !Ref myPublicRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref myInternetGateway
+
+  myPublicRouteTableAssociation01:
+    Type: "AWS::EC2::SubnetRouteTableAssociation"
+    Properties:
+      SubnetId: !Ref mySubnet01
+      RouteTableId: !Ref myPublicRouteTable
+
+  # for Private
+  myPrivateRouteTable:
+    Type: "AWS::EC2::RouteTable"
+    Properties:
+      VpcId: !Ref myVPC 
+      Tags:
+      - Key: Name
+        Value: !Join [ "-", [ !Ref Project, Private ] ]
+
+  myPrivateRouteTableAssociation01:
+    Type: "AWS::EC2::SubnetRouteTableAssociation"
+    Properties:
+      SubnetId: !Ref mySubnet02
+      RouteTableId: !Ref myPrivateRouteTable
+
+  myPrivateRouteTableAssociation02:
+    Type: "AWS::EC2::SubnetRouteTableAssociation"
+    Properties:
+      SubnetId: !Ref mySubnet03
+      RouteTableId: !Ref myPrivateRouteTable
+
+
+ #=================================
+ # Set up NAT.
+ #=================================
+  # Get EIP.
+  EIP:
+    Type: AWS::EC2::EIP
+    Properties:
+      Domain: vpc
+
+  # Create NAT.
+  NAT:
+    DependsOn: AttachGateway
+    Type: AWS::EC2::NatGateway
+    Properties:
+      AllocationId: !GetAtt EIP.AllocationId
+      SubnetId: !Ref mySubnet01
+      Tags:
+        - Key: Name
+          Value: !Join [ "-", [ !Ref Project, !Ref mySubnet01 ] ]
+
+  # Set Route
+  Route:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref myPrivateRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref NAT
+
+
+ #=================================
+ # Set RDS(DBSubnetGroup).
+ #=================================
+  myDBSubnetGroup: 
+    Type: "AWS::RDS::DBSubnetGroup"
+    Properties: 
+      DBSubnetGroupDescription: "BaseSubnetGroup"
+      SubnetIds: 
+        - !Ref mySubnet02
+        - !Ref mySubnet03
+      Tags: 
+        - Key: Name
+          Value: !Join [ "-", [ !Ref Project, SubnetGoup01 ] ]
+
