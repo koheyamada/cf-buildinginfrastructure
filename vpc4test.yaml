@@ -41,41 +41,41 @@ Resources:
  #=================================
  # Create Subnet.
  #=================================
-  # for Public-01a
+  # for Public-01c
   mySubnet01:
     Type: "AWS::EC2::Subnet"
     Properties:
       VpcId:
         Ref: myVPC
       CidrBlock: 10.0.0.0/22
-      AvailabilityZone: "ap-northeast-1a"
+      AvailabilityZone: "ap-northeast-1c"
       Tags:
       - Key: Name
-        Value: !Join [ "-", [ !Ref Environment, !Ref Project, Public01a ] ]
+        Value: !Join [ "-", [ !Ref Environment, !Ref Project, Public01c ] ]
 
-  # for Private-01a
+  # for Private-01c
   mySubnet02:
     Type: "AWS::EC2::Subnet"
     Properties:
       VpcId:
         Ref: myVPC
       CidrBlock: 10.0.4.0/22
-      AvailabilityZone: "ap-northeast-1a"
+      AvailabilityZone: "ap-northeast-1c"
       Tags:
       - Key: Name
-        Value: !Join [ "-", [ !Ref Environment, !Ref Project, Private01a ] ]
+        Value: !Join [ "-", [ !Ref Environment, !Ref Project, Private01c ] ]
 
-  # for Private-c
+  # for Private-01a
   mySubnet03:
     Type: "AWS::EC2::Subnet"
     Properties:
       VpcId:
         Ref: myVPC
       CidrBlock: 10.0.8.0/22
-      AvailabilityZone: "ap-northeast-1c"
+      AvailabilityZone: "ap-northeast-1a"
       Tags:
       - Key: Name
-        Value: !Join [ "-", [ !Ref Environment, !Ref Project, Private02c ] ]
+        Value: !Join [ "-", [ !Ref Environment, !Ref Project, Private02a ] ]
 
 
  #=================================
