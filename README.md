@@ -3,7 +3,7 @@
 ## Description
 
 ## Usage
-### vpn.yaml
+### vpc.yaml
 ```sh
 $ aws cloudformation create-stack \
     --stack-name <スタック名> \
