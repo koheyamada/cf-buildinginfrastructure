@@ -1,0 +1,199 @@
+#=================================
+Parameters:
+  Project:
+    Type: String
+    Default: prod
+    Description: Network settings such as VPC and IGW, Subnets, Routetables. For production environment.
+
+  targetVPC:
+    Type: String
+    Default: vpc-xxxxxxxxxxxxxxxxx
+    Description: Network settings such as VPC and IGW, Subnets, Routetables. For production environment.
+
+  targetGateWay:
+    Type: String
+    Default: igw-xxxxxxxxxxxxxxxxx
+    Description: Network settings such as VPC and IGW, Subnets, Routetables. For production environment.
+
+#=================================
+Outputs:
+  StackVPC:
+    Description: The ID of the VPC
+    Value: !Ref targetVPC
+    Export:
+      Name: !Join [ "-", [ !Ref targetVPC, VPCID ] ]
+ 
+
+#=================================
+Resources:
+
+ #=================================
+ # Make Subnet.
+ #=================================
+  # for pub-a
+  PublicSubnet01a:
+    Type: "AWS::EC2::Subnet"
+    Properties:
+      VpcId: !Ref targetVPC
+      CidrBlock: 10.95.0.0/22
+      AvailabilityZone: "ap-northeast-1a"
+      Tags:
+      - Key: Name
+        Value: !Join [ "-", [ !Ref Project, pub-a ] ]
+
+  # for pub-c
+  PublicSubnet01c:
+    Type: "AWS::EC2::Subnet"
+    Properties:
+      VpcId: !Ref targetVPC
+      CidrBlock: 10.95.4.0/22
+      AvailabilityZone: "ap-northeast-1c"
+      Tags:
+      - Key: Name
+        Value: !Join [ "-", [ !Ref Project, pub-c ] ]
+
+  # for dmz-a
+  DmzSubnet01a:
+    Type: "AWS::EC2::Subnet"
+    Properties:
+      VpcId: !Ref targetVPC
+      CidrBlock: 10.95.100.0/22
+      AvailabilityZone: "ap-northeast-1a"
+      Tags:
+      - Key: Name
+        Value: !Join [ "-", [ !Ref Project, dmz-a ] ]
+
+  # for dmz-c
+  DmzSubnet01c:
+    Type: "AWS::EC2::Subnet"
+    Properties:
+      VpcId: !Ref targetVPC
+      CidrBlock: 10.95.104.0/22
+      AvailabilityZone: "ap-northeast-1c"
+      Tags:
+      - Key: Name
+        Value: !Join [ "-", [ !Ref Project, dmz-c ] ]
+
+  # for sec-a
+  SecuritySubnet01a:
+    Type: "AWS::EC2::Subnet"
+    Properties:
+      VpcId: !Ref targetVPC
+      CidrBlock: 10.95.200.0/22
+      AvailabilityZone: "ap-northeast-1a"
+      Tags:
+      - Key: Name
+        Value: !Join [ "-", [ !Ref Project, sec-a ] ]
+
+  # for sec-c
+  SecuritySubnet01c:
+    Type: "AWS::EC2::Subnet"
+    Properties:
+      VpcId: !Ref targetVPC
+      CidrBlock: 10.95.204.0/22
+      AvailabilityZone: "ap-northeast-1c"
+      Tags:
+      - Key: Name
+        Value: !Join [ "-", [ !Ref Project, sec-c ] ]
+
+
+ #=================================
+ # Create NAT Gateway.
+ #=================================
+  # for dmz
+  DmzNat:
+    Type: "AWS::EC2::NatGateway"
+    Properties:
+      AllocationId: !GetAtt NatGatewayEIP.AllocationId
+      SubnetId: !Ref PublicSubnet01a
+      Tags:
+      - Key: Name
+        Value: !Join [ "-", [ !Ref Project, dmz ] ]
+
+  # EIP
+  NatGatewayEIP:
+    Type: "AWS::EC2::EIP"
+    Properties:
+      Domain: vpc
+
+
+ #=================================
+ # Make Routing.
+ #=================================
+  # for pub
+  PublicRouteTable:
+    Type: "AWS::EC2::RouteTable"
+    Properties:
+      VpcId: !Ref targetVPC
+      Tags:
+      - Key: Name
+        Value: !Join [ "-", [ !Ref Project, pub ] ]
+
+  PublicRoute01:
+    Type: "AWS::EC2::Route"
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref targetGateWay
+
+  PublicRouteTableAssociation01:
+    Type: "AWS::EC2::SubnetRouteTableAssociation"
+    Properties:
+      SubnetId: !Ref PublicSubnet01a
+      RouteTableId: !Ref PublicRouteTable
+
+  PublicRouteTableAssociation01:
+    Type: "AWS::EC2::SubnetRouteTableAssociation"
+    Properties:
+      SubnetId: !Ref PublicSubnet01c
+      RouteTableId: !Ref PublicRouteTable
+
+  # for dmz
+  DmzRouteTable:
+    Type: "AWS::EC2::RouteTable"
+    Properties:
+      VpcId: !Ref targetVPC 
+      Tags:
+      - Key: Name
+        Value: !Join [ "-", [ !Ref Project, dmz ] ]
+
+  DmzRoute01:
+    Type: "AWS::EC2::Route"
+    Properties:
+      RouteTableId: !Ref DmzRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref DmzNat
+
+  DmzRouteTableAssociation01:
+    Type: "AWS::EC2::SubnetRouteTableAssociation"
+    Properties:
+      SubnetId: !Ref DmzSubnet01a
+      RouteTableId: !Ref DmzRouteTable
+
+  DmzRouteTableAssociation02:
+    Type: "AWS::EC2::SubnetRouteTableAssociation"
+    Properties:
+      SubnetId: !Ref DmzSubnet01c
+      RouteTableId: !Ref DmzRouteTable
+
+  # for sec
+  SecurityRouteTable:
+    Type: "AWS::EC2::RouteTable"
+    Properties:
+      VpcId: !Ref targetVPC 
+      Tags:
+      - Key: Name
+        Value: !Join [ "-", [ !Ref Project, sec ] ]
+
+  SecurityRouteTableAssociation01:
+    Type: "AWS::EC2::SubnetRouteTableAssociation"
+    Properties:
+      SubnetId: !Ref SecuritySubnet01a
+      RouteTableId: !Ref SecurityRouteTable
+
+  SecurityRouteTableAssociation02:
+    Type: "AWS::EC2::SubnetRouteTableAssociation"
+    Properties:
+      SubnetId: !Ref SecuritySubnet01c
+      RouteTableId: !Ref SecurityRouteTable
+
